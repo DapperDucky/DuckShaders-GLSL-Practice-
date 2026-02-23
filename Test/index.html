@@ -11,8 +11,6 @@
     <!-- <script src="https://end3r.github.io/MDN-Games-3D/Shaders/js/three.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.144.0/build/three.min.js"></script>
     <script type="module">
-        //import * as THREE from 'https://cdn.skypack.dev';
-
         const _VS = `
             void main() {
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);

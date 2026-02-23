@@ -17,8 +17,6 @@
         display: block;
       }
 
-      
-
       #main {
         width: 100%;
         height: 100%;
@@ -65,7 +63,7 @@
       
       void main() {
             vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x+10.0, position.y, position.z+5.0, 1.0);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x+0.0, position.y, position.z+0.0, 1.0);
         }
     </script>
     <script id="fragmentShader" type="x-shader/x-fragment">
@@ -77,60 +75,100 @@
           float r = cos(iTime + 4.0);
           float g = cos(iTime + 2.0);
           float b = cos(iTime + 0.0);
-          gl_FragColor = vec4(r, g, b, 1.0);
+          gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);
       }
     </script>
     <script>
       const clock = new THREE.Clock();
       const WIDTH = window.innerWidth;
       const HEIGHT = window.innerHeight;
-
       const pivot = new THREE.Group();
-
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT);
+      const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(WIDTH, HEIGHT);
       renderer.setClearColor(0xdddddd, 1);
       document.getElementById("container").appendChild(renderer.domElement);
 
-      const scene = new THREE.Scene();
-
-      const camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT);
       camera.position.z = 50;
       scene.add(camera);
-
-      const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
-      //boxGeometry.translate(-5, -5, -5); // Move the box forward along the z-axis
-
-      // Center geometry faces
-      //boxGeometry.center();
-      //this.geometry.center();
 
       const myUniforms = {
         iTime: { value: 1.0 },
       };
 
-      const shaderMaterial = new THREE.ShaderMaterial({
+      async function loadShader(path) {
+        const text = await fetch(path).then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          var x = await response.text();
+          console.log('Taco 1');
+          return x;
+        });
+        return text;
+      }
+
+      async function getShaderCode(path) {
+        var code = '';
+        _ = await loadShader(path).then((t) => {
+           code = t;
+        });
+        return code;
+      }
+      
+      let vertexShaderCode = '';
+      let vertexShaderNeedsUpdate = false;
+      getShaderCode('./shaders/vertex_shader_001.glsl').then((code) => {
+        vertexShaderCode = code;
+        vertexShaderNeedsUpdate = true;
+      });
+      
+      let fragmentShaderCode = '';
+      let fragmentShaderNeedsUpdate = false;
+      getShaderCode('./shaders/fragment_shader_001.glsl').then((code) => {
+        fragmentShaderCode = code;
+        fragmentShaderNeedsUpdate = true;
+      });
+      
+      let shaderMaterial = new THREE.ShaderMaterial({
         vertexShader: document.getElementById("vertexShader").textContent,
         fragmentShader: document.getElementById("fragmentShader").textContent,
+        //vertexShader: vertexShaderCode,
+        //fragmentShader: fragmentShaderCode,
         uniforms: myUniforms
       });
-
+      
       const cube = new THREE.Mesh(boxGeometry, shaderMaterial);
-      cube.translateX(-10);
+      cube.translateX(0);
       cube.translateY(0);
       cube.translateZ(0);
       scene.add(cube);
-      //cube.rotation.set(0.4, 0.2, 0);
 
-      //pivot.add(cube);
-      //scene.add(pivot); 
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+      }
+
+      window.addEventListener("resize", () => {
+        onWindowResize();
+      });
 
       function render() {
+        if (fragmentShaderNeedsUpdate && vertexShaderNeedsUpdate) {
+          shaderMaterial.vertexShader = vertexShaderCode;
+          shaderMaterial.fragmentShader = fragmentShaderCode;
+          shaderMaterial.needsUpdate = true;
+          fragmentShaderNeedsUpdate = false;
+          vertexShaderNeedsUpdate = false;
+        }
+
+        shaderMaterial.fragmentShader
         const elapsedTime = clock.getElapsedTime();
         shaderMaterial.uniforms.iTime.value = performance.now() / 1000;
-        //cube.rotation.x += 0.01;
         cube.geometry.rotateY(0.01);
-        //cube.geometry.y += 0.01;
 
         requestAnimationFrame(render);
         renderer.render(scene, camera);
