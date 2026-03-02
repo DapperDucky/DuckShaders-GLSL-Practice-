@@ -1,0 +1,3 @@
+[
+    {"title": "Basic Shader", "vertex": "./shaders/vertex_shader_000.glsl", "fragment": "./shaders/fragment_shader_000.glsl", "description": "A basic shader that renders a simple colored cube."}
+]
